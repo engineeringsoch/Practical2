@@ -1,0 +1,144 @@
+//register.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+</head>
+<body>
+<form action="register.php" method="POST">
+    <h2>Registration</h2>
+
+    <input type="text" name="username" placeholder="Username" required><br><br>
+
+    <input type="email" name="email" placeholder="Email" required><br><br>
+
+    <input type="password" name="password" placeholder="Password" required><br><br>
+
+    <input type="password" name="confirm_password" placeholder="Confirm Password" required><br><br>
+
+    <button type="submit">Submit</button>
+
+    <p>Already have an account? <a href="login.html">Login here</a></p>
+</form>
+</body>
+</html>
+
+//register.php
+
+<?php
+$servername = "localhost";  // Usually localhost
+$username = "root";         // Your MySQL username
+$password = "";             // Your MySQL password (keep blank for XAMPP)
+$dbname = "user_db";        // Database name
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $username = $_POST['username'];
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+
+    if ($password != $confirm_password) {
+        die("Passwords do not match!");
+    }
+
+    // Encrypt password before saving
+    $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+    $sql = "INSERT INTO users (username, email, password) VALUES ('$username', '$email', '$hashed_password')";
+
+    if ($conn->query($sql) === TRUE) {
+        echo "Registration successful! <a href='login.html'>Login here</a>";
+    } else {
+        echo "Error: " . $conn->error;
+    }
+}
+
+$conn->close();
+?>
+
+//login.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+<form action="login.php" method="POST">
+    <h2>Login</h2>
+
+    <input type="email" name="email" placeholder="Email" required><br><br>
+
+    <input type="password" name="password" placeholder="Password" required><br><br>
+
+    <button type="submit">Login</button>
+
+    <p>Don't have an account? <a href="register.html">Register here</a></p>
+</form>
+</body>
+</html>
+
+//login.php
+<?php
+session_start();
+
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "user_db";
+
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+
+    $sql = "SELECT * FROM users WHERE email='$email'";
+    $result = $conn->query($sql);
+
+    if ($result->num_rows == 1) {
+        $row = $result->fetch_assoc();
+        if (password_verify($password, $row['password'])) {
+            $_SESSION['username'] = $row['username'];
+            echo "Login successful! Welcome, " . $row['username'];
+            // Or redirect to a dashboard page:
+            // header("Location: dashboard.php");
+        } else {
+            echo "Invalid password!";
+        }
+    } else {
+        echo "No user found with this email!";
+    }
+}
+
+$conn->close();
+?>
+
+//mysqcode
+-- Create Database
+CREATE DATABASE IF NOT EXISTS user_db;
+
+-- Use the Database
+USE user_db;
+
+-- Create Table for Users
+CREATE TABLE IF NOT EXISTS users (
+    id INT(11) AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(100) NOT NULL,
+    email VARCHAR(100) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
